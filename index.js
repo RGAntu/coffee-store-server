@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient, ObjectId, ServerApiVersion } from "mongodb";
 
 const app = express();
 const port = 3000;
@@ -10,7 +10,8 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.m3lhrmy.mongodb.net/?appName=Cluster0`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.m3lhrmy.mongodb.net/?appName=Cluster0`;
+const uri = `mongodb://localhost:27017/`
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -32,12 +33,34 @@ async function run() {
       res.send("Welcome to the Coffee Server");
     });
 
+    app.get("/coffees", async(req, res) => {
+      const cursor = coffeeCollections.find();
+      // const allCoffees = [];
+      // for await (const doc of cursor){
+      //   allCoffees.push(doc)
+      // }
+       const allCoffees = await coffeeCollections.find().toArray();
+      res.send(allCoffees)
+    })
+
     app.post("/coffees", async(req, res) => {
       const doc = req.body;
       console.log(doc)
       const result = await coffeeCollections.insertOne(doc);
       res.send(result);
 
+    });
+
+    app.delete("/coffees/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id)};
+      const result = await coffeeCollections.deleteOne(query);
+      if( result.deleteCount === 1){
+        console.log("Successfully deleted one document.")
+      }else{
+        console.log("No documents matched the query. Deleted 0 documents")
+      }
+      res.send(result);
     })
 
 
